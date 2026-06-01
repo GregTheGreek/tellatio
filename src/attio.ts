@@ -765,6 +765,24 @@ export async function updatePersonTelegramIdentity(recordId: string, input: Tele
   });
 }
 
+export async function updatePersonName(
+  recordId: string,
+  name: { full: string; first?: string; last?: string },
+): Promise<void> {
+  const values: Record<string, unknown> = {
+    name: {
+      full_name: name.full,
+      first_name: name.first || "",
+      last_name: name.last || "",
+    },
+  };
+
+  await attioFetch(`/objects/people/records/${recordId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ data: { values } }),
+  });
+}
+
 export interface PersonSyncResolution {
   recordId: string;
   status: "resolved" | "created";
