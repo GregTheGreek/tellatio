@@ -1387,6 +1387,12 @@ async function cmdAssociationsStatus(flags: Record<string, string>): Promise<voi
   });
 }
 
+async function cmdAssociationsCompanyCandidates(flags: Record<string, string>): Promise<void> {
+  const name = flags["name"];
+  if (!name) die("Required flag: --name");
+  out(await attio.findCompanyCandidates(name));
+}
+
 // ── identities ──────────────────────────────────────────────────
 
 async function collectIdentityInputs(flags: Record<string, string>): Promise<TelegramIdentityInput[]> {
@@ -2749,6 +2755,7 @@ export {
   cmdAssociationsUpsert,
   cmdAssociationsReconcile,
   cmdAssociationsStatus,
+  cmdAssociationsCompanyCandidates,
   cmdIdentitiesReconcile,
   cmdIdentitiesCandidates,
   cmdIdentitiesUpsert,

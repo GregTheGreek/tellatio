@@ -38,6 +38,7 @@ import {
   cmdAssociationsUpsert,
   cmdAssociationsReconcile,
   cmdAssociationsStatus,
+  cmdAssociationsCompanyCandidates,
   cmdIdentitiesReconcile,
   cmdIdentitiesCandidates,
   cmdIdentitiesUpsert,
@@ -280,6 +281,15 @@ const associations = Cli.create("associations", { description: "Manage Attio Tel
     run: (c) => runAttio(() => cmdAssociationsStatus(commandFlags({
       object: c.options.object,
       limit: c.options.limit,
+    }))),
+  })
+  .command("company-candidates", {
+    description: "Search Attio Company candidates by name (for association approval)",
+    options: z.object({
+      name: z.string().describe("Company name search"),
+    }),
+    run: (c) => runAttio(() => cmdAssociationsCompanyCandidates(commandFlags({
+      name: c.options.name,
     }))),
   })
   .command("upsert", {
