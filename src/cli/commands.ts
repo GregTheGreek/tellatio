@@ -1064,7 +1064,14 @@ async function cmdDiscoverAssociations(flags: Record<string, string>): Promise<v
   const limit = numFlag(flags, "limit", 100);
   const sinceTs = flags["since"] ? parseTimeFilter(flags["since"]) : parseTimeFilter("3d");
   const includeIgnored = flags["include-ignored"] === "true";
-  out(await discoverAssociationSuggestions(limit, sinceTs, includeIgnored, loadCliBanList()));
+  const onlyChats = flags["only-chats"]
+    ? new Set(flags["only-chats"].split(",").map((v) => v.trim()).filter(Boolean))
+    : undefined;
+  let suggestions = await discoverAssociationSuggestions(limit, sinceTs, includeIgnored, loadCliBanList());
+  if (onlyChats && onlyChats.size > 0) {
+    suggestions = suggestions.filter((s) => onlyChats.has(s.telegramChatId));
+  }
+  out(suggestions);
 }
 
 async function discoverAssociationSuggestions(
@@ -1167,6 +1174,9 @@ async function cmdAssociationsReconcile(flags: Record<string, string>): Promise<
   const includeProfileDescriptions = flags["include-profile-descriptions"] !== "false";
   const profileParticipantLimit = numFlag(flags, "profile-participant-limit", 30);
   const companyLimit = numFlag(flags, "company-limit", 500);
+  const onlyChats = flags["only-chats"]
+    ? new Set(flags["only-chats"].split(",").map((v) => v.trim()).filter(Boolean))
+    : undefined;
   const isDryRun = dryRun(flags);
   const banList = loadCliBanList();
 
@@ -1189,6 +1199,9 @@ async function cmdAssociationsReconcile(flags: Record<string, string>): Promise<
   const fetchBio = createBioFetcher(includeProfileDescriptions);
   const excludedCompanyNames = loadOwnCompanyNames();
   const suggestions = await discoverAssociationSuggestions(limit, sinceTs, false, banList);
+  const scopedSuggestions = onlyChats && onlyChats.size > 0
+    ? suggestions.filter((s) => onlyChats.has(s.telegramChatId))
+    : suggestions;
   const result = {
     approved: [] as Array<Record<string, unknown>>,
     needsReview: [] as Array<Record<string, unknown>>,
@@ -1197,7 +1210,7 @@ async function cmdAssociationsReconcile(flags: Record<string, string>): Promise<
     wouldUpsert: [] as Array<TelegramAssociation>,
   };
 
-  for (const originalSuggestion of suggestions) {
+  for (const originalSuggestion of scopedSuggestions) {
     const dialog = dialogByChatId.get(originalSuggestion.telegramChatId);
     const profileSignals = includeProfileDescriptions && dialog?.entity
       ? await collectCompanyProfileSignals(
@@ -1384,6 +1397,9 @@ async function collectIdentityInputs(flags: Record<string, string>): Promise<Tel
   const includeParticipants = flags["include-participants"] !== "false";
   const includeProfileDescriptions = flags["include-profile-descriptions"] !== "false";
   const companyLimit = numFlag(flags, "company-limit", 500);
+  const onlyChats = flags["only-chats"]
+    ? new Set(flags["only-chats"].split(",").map((v) => v.trim()).filter(Boolean))
+    : undefined;
   const banList = loadCliBanList();
   const dialogs = filterBannedDialogs(await client.getDialogs({ limit }), banList);
   const me = await client.getMe() as Api.User;
@@ -1433,6 +1449,7 @@ async function collectIdentityInputs(flags: Record<string, string>): Promise<Tel
     dialogByChatId.set(entity.id.toString(), dialog);
 
     if (entity instanceof Api.User && dialog.message && dialog.message.date >= sinceTs) {
+      if (onlyChats && onlyChats.size > 0 && !onlyChats.has(entity.id.toString())) continue;
       if (matchBannedEntity(banList, entity)) continue;
       const bio = await userBio(entity);
       addIdentity(telegramIdentityFromUser(
@@ -1446,7 +1463,10 @@ async function collectIdentityInputs(flags: Record<string, string>): Promise<Tel
   }
 
   if (includeParticipants) {
-    for (const association of approvedAssociations) {
+    const scopedApprovedAssociations = onlyChats && onlyChats.size > 0
+      ? approvedAssociations.filter((a) => onlyChats.has(a.telegramChatId))
+      : approvedAssociations;
+    for (const association of scopedApprovedAssociations) {
       const dialog = dialogByChatId.get(association.telegramChatId);
       if (!dialog?.entity || dialog.entity instanceof Api.User) continue;
       if (!dialog.message || dialog.message.date < sinceTs) continue;

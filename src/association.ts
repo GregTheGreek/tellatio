@@ -123,7 +123,8 @@ function clampConfidence(score: number): number {
 
 function ownCompanyNames(): string[] {
   const raw = process.env["TELLATIO_OWN_COMPANY_NAMES"] || "";
-  return raw.split(",").map((item) => item.trim()).filter(Boolean);
+  const configured = raw.split(",").map((item) => item.trim()).filter(Boolean);
+  return configured.length > 0 ? configured : ["Phylax"];
 }
 
 function isOwnCompanyName(value: string): boolean {

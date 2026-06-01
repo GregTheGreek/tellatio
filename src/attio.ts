@@ -472,9 +472,15 @@ function findCompanyHintCandidate(
 }
 
 export async function getPersonSummary(recordId: string): Promise<PersonSummary | null> {
-  const res = await attioFetch(`/objects/people/records/${recordId}`, { method: "GET" });
-  const data = (await res.json()) as { data: AttioRecord };
-  return summarizePerson(data.data);
+  try {
+    const res = await attioFetch(`/objects/people/records/${recordId}`, { method: "GET" });
+    const data = (await res.json()) as { data: AttioRecord };
+    return summarizePerson(data.data);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("Attio API 404")) return null;
+    throw err;
+  }
 }
 
 export async function findPersonCandidatesByTelegramUserId(telegramUserId: string): Promise<PersonSummary[]> {

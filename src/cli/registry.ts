@@ -260,11 +260,13 @@ const discover = Cli.create("discover", { description: "Find likely Telegram to 
       limit: z.number().default(100).describe("Maximum recent dialogs to inspect"),
       since: z.string().default("3d").describe("Time filter: today, yesterday, Nd, Nh, Nm, or YYYY-MM-DD"),
       includeIgnored: z.boolean().default(false).describe("Include low-confidence ignored candidates"),
+      onlyChats: z.string().optional().describe("Comma-separated Telegram canonical chat IDs to restrict scanning"),
     }),
     run: (c) => runTelegram(() => cmdDiscoverAssociations(commandFlags({
       limit: c.options.limit,
       since: c.options.since,
       "include-ignored": c.options.includeIgnored,
+      "only-chats": c.options.onlyChats,
     }))),
   });
 
@@ -321,6 +323,7 @@ const associations = Cli.create("associations", { description: "Manage Attio Tel
       includeProfileDescriptions: z.boolean().default(true).describe("Use Telegram profile descriptions/bios from group participants as company signals"),
       profileParticipantLimit: z.number().default(30).describe("Maximum group participants to inspect for profile company hints"),
       companyLimit: z.number().default(500).describe("Maximum Attio companies to load for profile hint matching"),
+      onlyChats: z.string().optional().describe("Comma-separated Telegram canonical chat IDs to restrict scanning"),
       dryRun: z.boolean().default(false).describe("Preview without writing association records"),
     }),
     run: (c) => runTelegramAndAttio(() => cmdAssociationsReconcile(commandFlags({
@@ -331,6 +334,7 @@ const associations = Cli.create("associations", { description: "Manage Attio Tel
       "include-profile-descriptions": c.options.includeProfileDescriptions,
       "profile-participant-limit": c.options.profileParticipantLimit,
       "company-limit": c.options.companyLimit,
+      "only-chats": c.options.onlyChats,
       "dry-run": c.options.dryRun,
     }))),
   });
@@ -358,6 +362,7 @@ const identities = Cli.create("identities", { description: "Resolve Telegram use
       includeProfileDescriptions: z.boolean().default(true).describe("Fetch Telegram profile descriptions/bios and infer company hints"),
       participantLimit: z.number().default(50).describe("Maximum recent senders or fallback participants per approved group"),
       companyLimit: z.number().default(500).describe("Maximum Attio companies to load for profile hint matching"),
+      onlyChats: z.string().optional().describe("Comma-separated Telegram canonical chat IDs to restrict scanning"),
       dryRun: z.boolean().default(false).describe("Preview without writing identity records or People updates"),
     }),
     run: (c) => runTelegramAndAttio(() => cmdIdentitiesReconcile(commandFlags({
@@ -369,6 +374,7 @@ const identities = Cli.create("identities", { description: "Resolve Telegram use
       "include-profile-descriptions": c.options.includeProfileDescriptions,
       "participant-limit": c.options.participantLimit,
       "company-limit": c.options.companyLimit,
+      "only-chats": c.options.onlyChats,
       "dry-run": c.options.dryRun,
     }))),
   })
